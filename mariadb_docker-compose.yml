@@ -1,0 +1,79 @@
+version: '3.7'
+  #############################################################################################
+  #############################################################################################
+  ##
+  ## Traefik-LetsEncrypt/KeyCloak/Portainer/Dozzle
+  ##
+  ## Edited for SGDF(Grégory)
+  #############################################################################################
+  #############################################################################################
+
+########################### NETWORK
+networks:
+  traefik:
+    external: true
+  networkdb:
+    name: networkdb
+    driver: bridge
+    external: true
+
+########################### SECRETS
+secrets:
+  mysql_root_password:
+    file: $DOCKER_SECRETS_DIR/mysql_root_password
+
+
+services:
+#########################################################
+## MariaDB-DB
+## PostgreSQL database to persist the IDP data Keycloack
+#########################################################
+  maria-db:
+    container_name: mariadb
+    hostname: mariadb
+    image: linuxserver/mariadb:110.4.20mariabionic-ls26
+    restart: always
+    networks:
+      - networkdb
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "3306:3306"
+    volumes:
+      - $DOCKERDIR/mariadb_data/data:/config
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - TZ=$TZ
+      - MYSQL_ROOT_PASSWORD_FILE= /run/secrets/mysql_root_password
+    secrets:
+      - mysql_root_password
+#########################################################
+## PHP-MYADMIN
+## Database management
+#########################################################
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: unless-stopped
+    networks:
+      - traefik
+      - networkdb
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PMA_HOST=$MARIADB_HOST
+      - PMA_PORT=$MARIADB_PORT
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
+    secrets:
+      - mysql_root_password
+    labels:
+      traefik.enable: true
+      ## HTTP Routers
+      traefik.http.routers.phpmyadmin.entrypoints: websecure
+      traefik.http.routers.phpmyadmin.rule: Host(`pma.${DOMAINNAME}`)
+      traefik.http.routers.phpmyadmin.tls: true
+      traefik.http.routers.phpmyadmin.service: phpmyadmin
+      ## HTTP Services
+      traefik.http.services.phpmyadmin.loadbalancer.server.port: 80
+      traefik.http.routers.phpmyadmin.middlewares: chain-no-auth@file

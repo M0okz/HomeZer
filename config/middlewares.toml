@@ -1,0 +1,66 @@
+## This is dynamic configuration file, no needed reload traefik container
+[http.middlewares]
+  [http.middlewares.middlewares-oauth]
+    [http.middlewares.middlewares-oauth.forwardAuth]
+      address = "http://oauth:4181"
+      trustForwardHeader = true
+      authResponseHeaders = ["X-Forwarded-User"]
+    [http.middlewares.middlewares-basicauth.basicAuth]
+      users = ["admin:$xxxx"]
+    [http.middlewares.middlewares-ipwhitelist.ipWhiteList]
+      sourceRange = ["82.65.164.207","192.168.30.0/24","173.245.48.0/20","103.21.244.0/22","103.22.200.0/22","103.31.4.0/22","141.101.64.0/18","108.162.192.0/18","190.93.240.0/20","188.114.96.0/20","197.234.240.0/22","198.41.128.0/17","162.158.0.0/15","104.16.0.0/13","104.24.0.0/14","172.64.0.0/13","131.0.72.0/22"]
+    [http.middlewares.middlewares-rate-limit.rateLimit]
+      average = 100
+      burst = 50
+    [http.middlewares.middlewares-secure-headers]
+    [http.middlewares.middlewares-secure-headers.headers]
+      accessControlAllowMethods= ["GET", "OPTIONS", "PUT"]
+      accessControlMaxAge = 100
+      hostsProxyHeaders = ["X-Forwarded-Host"]
+      sslRedirect = true
+      stsSeconds = 63072000
+      stsIncludeSubdomains = true
+      stsPreload = true
+      forceSTSHeader = true
+#      frameDeny = true #overwritten by customFrameOptionsValue
+      customFrameOptionsValue = "allow-from https:example.com" #CSP takes care of this but may be needed for organizr. 
+      contentTypeNosniff = true 
+      browserXssFilter = true 
+#      sslForceHost = true # add sslHost to all of the services
+#      sslHost = "example.com"
+      referrerPolicy = "same-origin" 
+#      Setting contentSecurityPolicy is more secure but it can break things. Proper auth will reduce the risk.
+#      the below line also breaks some apps due to 'none' - sonarr, radarr, etc.
+#      contentSecurityPolicy = "frame-ancestors '*.example.com:*';object-src 'none';script-src 'none';"
+      featurePolicy = "camera 'none'; geolocation 'none'; microphone 'none'; payment 'none'; usb 'none'; vr 'none';" 
+      [http.middlewares.middlewares-secure-headers.headers.customResponseHeaders]
+        X-Robots-Tag = "none,noarchive,nosnippet,notranslate,noimageindex,"
+        server = ""
+### Section for external routing (servers)-(no needed reload traefik container)      
+[http.routers]
+  [http.routers.supernas-rtr]
+      entryPoints = ["websecure"]
+      rule = "Host(`supernas.cloack.fr`)"
+      service = "supernas-svc"
+      middlewares = ["middlewares-secure-headers"]
+      [http.routers.supernas-rtr.tls]
+        certresolver = "dns-cloudflare"
+  [http.routers.synology-rtr]
+      entryPoints = ["websecure"]
+      rule = "Host(`synology.cloack.fr`)"
+      service = "synology-svc"
+      middlewares = ["middlewares-secure-headers"]
+      [http.routers.synology-rtr.tls]
+        certresolver = "dns-cloudflare"
+        
+[http.services]
+  [http.services.supernas-svc]
+    [http.services.supernas-svc.loadBalancer]
+      passHostHeader = true
+      [[http.services.supernas-svc.loadBalancer.servers]]
+        url = "http://192.168.30.245:80" # or whatever your external host's IP:port is
+  [http.services.synology-svc]
+    [http.services.synology-svc.loadBalancer]
+      passHostHeader = true
+      [[http.services.synology-svc.loadBalancer.servers]]
+        url = "http://192.168.30.196:5456" # or whatever your external host's IP:port is

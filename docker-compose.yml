@@ -1,0 +1,216 @@
+version: '3.7'
+  #############################################################################################
+  #############################################################################################
+  ##
+  ## Traefik-LetsEncrypt/Dozzle
+  ## 
+  ## Edited for SGDF(Grégory)
+  #############################################################################################
+  #############################################################################################
+
+########################### NETWORK
+networks:
+  traefik:
+    external: true
+  sock_proxy:
+    name: sock_proxy
+    driver: bridge
+    external: true
+
+services:
+#########################################################
+## TRAEFIK
+## The Cloud Native Edge Router
+## Details : https://www.youtube.com/watch?v=Da7bWh1CfxA
+#########################################################
+  traefik:
+    image: traefik:2.4.13
+    container_name: traefik
+    networks:
+      - traefik
+      - sock_proxy
+    depends_on:
+      - socket-proxy
+    security_opt:
+      - no-new-privileges:true
+    command: # CLI arguments
+      - --global.checkNewVersion=true
+      - --global.sendAnonymousUsage=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.http.tls.options=tls-opts@file
+      - --entryPoints.metrics.address=:8081
+      - --api=true
+      - --log.level=INFO # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+      - --accesslog=true
+      - --accesslog.filepath=logs/traefik.log
+      - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
+      - --accessLog.filters.statusCodes=400-499
+      - --metrics.prometheus=true
+      - --metrics.prometheus.buckets=0.100000, 0.300000, 1.200000, 5.000000
+      - --metrics.prometheus.addEntryPointsLabels=true
+      - --metrics.prometheus.addServicesLabels=true
+      - --providers.docker=true
+      - --providers.docker.endpoint=tcp://socket-proxy:2375
+      - --providers.docker.exposedByDefault=false
+      - --providers.docker.swarmMode=false
+      - --providers.docker.network=traefik
+      - --providers.file.directory=./config
+      - --providers.file.watch=true # Only works on top level files in the rules folder
+      - --entrypoints.cloudflare.forwardedHeaders.trustedIPs=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22
+      ##- --certificatesResolvers.dns-cloudflare.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory 
+      - --certificatesResolvers.dns-cloudflare.acme.email=$CLOUDFLARE_EMAIL
+      - --certificatesResolvers.dns-cloudflare.acme.storage=./wildcart-letsencrypt/acme.json
+      - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.provider=cloudflare
+      - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.resolvers=1.1.1.1:53,1.0.0.1:53
+      - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.delayBeforeCheck=90
+    environment:
+      - TZ=${TZ}
+      - CF_API_EMAIL=$CLOUDFLARE_EMAIL
+      - CF_API_KEY=$CLOUDFLARE_API_KEY
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - $DOCKERDIR/wildcart-letsencrypt:/wildcart-letsencrypt
+      - ./config:/config
+      - ./logs:/logs
+    labels:
+      traefik.enable: true
+      ## HTTP-to-HTTPS Redirect
+      traefik.http.routers.http-catchall.rule: hostregexp(`{host:.+}`)
+      traefik.http.routers.http-catchall.entrypoints: web
+      traefik.http.routers.http-catchall.middlewares: redirect-to-https
+      traefik.http.middlewares.redirect-to-https.redirectscheme.scheme: https
+      ## HTTP Routers
+      traefik.http.routers.traefik.entrypoints: websecure
+      traefik.http.routers.wildcard-certs.tls.certresolver: dns-cloudflare
+      traefik.http.routers.wildcard-certs.tls.domains[0].main: ${DOMAINNAME}
+      traefik.http.routers.wildcard-certs.tls.domains[0].sans: '*.${DOMAINNAME}'
+      traefik.http.routers.traefik.rule: Host(`traefik.${DOMAINNAME}`)
+      traefik.http.routers.traefik.service: api@internal
+      ## Middlewares
+      traefik.http.routers.traefik.middlewares: middlewares-rate-limit@file,middlewares-secure-headers@file,middlewares-ipwhitelist@file
+    restart: always
+##########################################################
+## PROXY-SOCKET Security Enchanced Proxy for Docker Socket
+########################################################## 
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: socket_proxy
+    restart: always
+    networks:
+      - sock_proxy
+    privileged: true
+    ports:
+      - "127.0.0.1:2375:2375" # Port 2375 should only ever get exposed to the internal network. When possible use this line.
+        # I use the next line instead, as I want portainer to manage multiple docker endpoints within my home network.
+      # - "2375:2375"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      LOG_LEVEL: info # debug,info,notice,warning,err,crit,alert,emerg
+          ## Variables match the URL prefix (i.e. AUTH blocks access to /auth/* parts of the API, etc.).
+      # 0 to revoke access.
+      # 1 to grant access.
+      ## Granted by Default
+      EVENTS: 1
+      PING: 1
+      VERSION: 1
+      ## Revoked by Default
+      # Security critical
+      AUTH: 0
+      SECRETS: 0
+      POST: 1 # Ouroboros
+      # Not always needed
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      CONTAINERS: 1 # Traefik, portainer, etc.
+      DISTRIBUTION: 0
+      EXEC: 0
+      IMAGES: 1 # Portainer
+      INFO: 1 # Portainer
+      NETWORKS: 1 # Portainer
+      NODES: 0
+      PLUGINS: 0
+      SERVICES: 1 # Portainer
+      SESSION: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 1 # Portainer
+      VOLUMES: 1 # Portainer
+#########################################################
+## DOZZLE Real-time Docker Log Viewer
+######################################################### 
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    restart: always
+    networks:
+      - traefik
+      - sock_proxy
+    depends_on:
+      - socket-proxy
+    security_opt:
+      - no-new-privileges:true
+      # ports:
+      #   - "$DOZZLE_PORT:8080"
+    environment:
+      DOZZLE_LEVEL: info
+      DOZZLE_TAILSIZE: 300
+      DOZZLE_FILTER: "status=running"
+      DOZZLE_BASE: /
+      # DOZZLE_FILTER: "label=log_me" # limits logs displayed to containers with this label
+      DOCKER_HOST: tcp://socket-proxy:2375
+        # volumes:
+        #  - /var/run/docker.sock:/var/run/docker.sock # Use Docker Socket Proxy instead for improved security
+    labels:
+      traefik.enable: true
+      ## HTTP Routers
+      traefik.http.routers.dozzle.entrypoints: websecure
+      traefik.http.routers.dozzle.rule: Host(`dozzle.$DOMAINNAME`)
+      ## Middlewares
+      traefik.http.routers.dozzle.middlewares: chain-no-auth@file
+      ## HTTP Services
+      traefik.http.services.dozzle.loadbalancer.server.port: 8080
+#########################################################
+## TRAEFIK CERT Dumper
+######################################################### 
+  certdumper:
+    container_name: traefik_certdumper
+    image: humenius/traefik-certs-dumper:latest
+    network_mode: none
+    security_opt:
+      - no-new-privileges:true
+    # command: --restart-containers container1,container2,container3
+    volumes:
+      - $DOCKERDIR/wildcart-letsencrypt:/traefik:ro
+      - $DOCKERDIR/wildcart-letsencrypt/certs:/output:rw
+      # - /var/run/docker.sock:/var/run/docker.sock:ro # Only needed if restarting containers (use Docker Socket Proxy instead)
+    environment:
+      DOMAIN: $DOMAINNAME
+#########################################################
+## PORTAINER
+#########################################################  
+  portainer:
+    image: portainer/portainer-ce:2.6.1
+    container_name: portainer
+    restart: unless-stopped
+    depends_on:
+      - socket-proxy
+    networks:
+      - traefik
+      - sock_proxy
+    command: -H tcp://socket-proxy:2375
+    volumes:
+      - $DOCKERDIR/portainer_data:/data
+    labels:
+      traefik.enable: true
+      ## HTTP Routers
+      traefik.http.routers.portainer.entrypoints: websecure
+      traefik.http.routers.portainer.rule: Host(`portainer.$DOMAINNAME`)
+      ## Middlewares
+      traefik.http.routers.portainer.middlewares: chain-no-auth@file
+      ## HTTP Services
+      traefik.http.services.portainer.loadbalancer.server.port: 9000

@@ -1,0 +1,58 @@
+version: '3.7'
+
+########################### NETWORK
+networks:
+  traefik:
+    external: true
+  networkdb:
+    name: networkdb
+    driver: bridge
+    external: true
+
+services:
+#########################################################
+## REDIS-DB
+# Nextcloud (in memory) Redis Cache - speed up lookup transactions
+# Speeds up Nextcloud by reducing the time spent "looking" for things
+#########################################################
+# Guacamole - Remote desktop, SSH, on Telnet on any HTML5 Browser 
+# Create all databases and tables first
+# Guacamole Daemon - Needed for Guacamole
+  guacd:
+    image: guacamole/guacd
+    container_name: guacd
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - traefik
+
+# Guacamole - Remote desktop, SSH, on Telnet on any HTML5 Browser 
+# Create all databases and tables first      
+  guacamole:
+    image: guacamole/guacamole:latest
+    container_name: guacamole
+    restart: unless-stopped
+    networks:
+      - traefik
+      - networkdb
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      GUACD_HOSTNAME: guacd
+      MYSQL_HOSTNAME: mariadb
+      MYSQL_PORT: $MARIADB_PORT
+      MYSQL_DATABASE: guacamole_db
+      MYSQL_USER: $GUAC_MYSQL_USER
+      MYSQL_PASSWORD: $GUAC_MYSQL_PASSWORD
+    labels:
+      traefik.enable: true
+      ## HTTP Routers
+      traefik.http.routers.guacamole.entrypoints: websecure
+      traefik.http.routers.guacamole.rule: Host(`guac.$DOMAINNAME`)
+      ## Middlewares
+      traefik.http.routers.guacamole.middlewares: add-guacamole
+      traefik.http.middlewares.add-guacamole.addPrefix.prefix: /guacamole
+      ## HTTP Services
+      traefik.http.routers.guacamole.service: guacamole
+      traefik.http.services.guacamole.loadbalancer.server.port: 8080

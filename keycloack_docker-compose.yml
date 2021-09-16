@@ -1,0 +1,173 @@
+version: '3.7'
+  #############################################################################################
+  #############################################################################################
+  ##
+  ## Traefik-LetsEncrypt/KeyCloak/Portainer/Dozzle
+  ## 
+  ## .env You have to create .env files with
+  ## all the parameters pre-filled before starting
+  ## this docker-compose.yml file. (.env in the same directory as docker-compose.yml)
+  ##
+  ## Edited for SGDF(Grégory)
+  #############################################################################################
+  #############################################################################################
+
+########################### NETWORK
+networks:
+  traefik:
+    external: true
+  networkdb:
+    name: networkdb
+    driver: bridge
+    external: true
+
+########################### VOLUMES
+volumes:
+  postgres_data:
+    driver: local
+
+########################### SECRETS
+secrets:
+  mysql_root_password:
+    file: $DOCKER_SECRETS_DIR/mysql_root_password
+
+
+services:
+#########################################################
+## Postgreg-DB
+## PostgreSQL database to persist the IDP data Keycloack
+#########################################################
+  keycloak-db:
+    image: postgres
+    container_name: keycloak-db
+    networks:
+      - networkdb
+    volumes:
+      - $DOCKERDIR/postgres_data:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 5432:5432
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - LOG_MIN_MESSAGES=INFO
+      - DB_VENDOR=postgres
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_ADDR=keycloak-db
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    restart: always
+    command: ["postgres", "-c", "log_min_messages=INFO"]
+#########################################################
+## KEYCLOAK-DB-BACKUP
+## Script to backup the Keycloak DB on startup and daily
+#########################################################
+  keycloak-db-backup:
+    image: postgres
+    container_name: keycloak-backup
+    networks:
+      - networkdb
+    volumes:
+      - ${KEYCLOAKBACKUP}:/dump
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - PGHOST=keycloak-db
+      - PGUSER=${DB_USER}
+      - PGPASSWORD=${DB_PASSWORD}
+      - BACKUP_NUM_KEEP=7
+      - BACKUP_FREQUENCY=1d
+    entrypoint: |
+      bash -c 'bash -s <<EOF
+      trap "break;exit" SIGHUP SIGINT SIGTERM
+      sleep 2m
+      while /bin/true; do
+        pg_dump -Fc > /dump/dump_\`date +%d-%m-%Y"_"%H_%M_%S\`.psql
+        (ls -t /dump/dump*.psql|head -n $$BACKUP_NUM_KEEP;ls /dump/dump*.psql)|sort|uniq -u|xargs rm -- {}
+        sleep $$BACKUP_FREQUENCY
+      done
+      EOF'
+    restart: always
+    depends_on:
+      - keycloak-db
+#########################################################
+## KEYCLOAK
+## IAM (identity and Access Managment)
+#########################################################
+  keycloak:
+    image: jboss/keycloak
+    container_name: keycloak
+    domainname: ${DOMAINNAME}
+    ports:
+      - 8080:8080
+    networks:
+      - networkdb
+      - traefik
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - KEYCLOAK_LOGLEVEL=WARNING
+      - KEYCLOAK_USER=${KC_USER}
+      - KEYCLOAK_PASSWORD=${KC_PASSWORD}
+      - DB_VENDOR=postgres
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_ADDR=keycloak-db
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - PROXY_ADDRESS_FORWARDING=true
+      - KEYCLOAK_HOSTNAME=auth.${DOMAINNAME}
+      - POSTGRES_USER=${PG_USER}
+      - POSTGRES_PASSWORD=${PG_PASSWORD}
+    labels:
+      traefik.enable: true
+      traefik.http.routers.auth.rule: Host(`auth.${DOMAINNAME}`)
+      traefik.http.routers.auth.entrypoints: websecure
+      traefik.http.services.auth.loadbalancer.server.port: 8080
+      traefik.frontend.passHostHeader: true
+      
+    restart: unless-stopped
+    depends_on:
+      - keycloak-db
+#########################################################
+## FORWARD-AUTH - TRAEFIK
+## Traefik middleware providing OpenID connect support
+## through Keycloak IDP
+#########################################################      
+  oauth:
+    image: thomseddon/traefik-forward-auth:2
+    container_name: oauth-proxy
+    restart: unless-stopped
+    networks:
+      - traefik
+      - default
+    security_opt:
+      - no-new-privileges:true
+    extra_hosts:
+      - "auth.${DOMAINNAME}:192.168.30.40"
+      - "oauth.${DOMAINNAME}:192.168.30.40"
+    environment:
+       #This is based on using the selected realm. On Keycloack in a new client, get CLIENT_ID, CLIENT_SECRET details.
+      - PROVIDERS_OIDC_CLIENT_ID=Traefik-client
+      - PROVIDERS_OIDC_CLIENT_SECRET=fbc7e65a-5893-492c-a598-ce54ac6552f4
+      - PROVIDERS_OIDC_ISSUER_URL=https://auth.cloack.fr/auth/realms/HomeZer
+      - SECRET=${COOKIESSECUREKEY}
+      - COOKIE_DOMAIN=${DOMAINNAME}
+      - INSECURE_COOKIE=false
+      - AUTH_HOST=oauth.${DOMAINNAME}
+      - URL_PATH=/_oauth
+      - LOG_LEVEL=info
+      - LOG_FORMAT=text
+      - LIFETIME=2592000 #- LIFETIME=43200 # 12 hours
+      - DEFAULT_PROVIDER=oidc
+    labels:
+      traefik.enable: true
+      traefik.http.routers.oauth.entrypoints: websecure
+      traefik.http.routers.oauth.rule: Host(`oauth.${DOMAINNAME}`)
+      traefik.http.routers.oauth.service: oauth
+      traefik.http.services.oauth.loadbalancer.server.port: 4181
+      traefik.http.routers.oauth.middlewares: middlewares-oauth@file
+      
+    restart: unless-stopped

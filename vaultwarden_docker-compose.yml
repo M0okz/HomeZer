@@ -1,0 +1,50 @@
+version: '3.7'
+
+########################### NETWORK
+networks:
+  traefik:
+    external: true
+########################### VOLUMES
+  vaultwarden-data:
+    name: vaultwarden-data
+
+services:
+#########################################################
+## VAULTWARDEN
+#########################################################
+  bitwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: always
+    networks:
+      - traefik
+    volumes:
+      - $DOCKERDIR/vaultwarden_data:/data/
+    environment:
+      - DOMAIN=https://pass.cloack.fr
+      - SMTP_HOST=smtp.office365.com
+      - SMTP_FROM=$SMTP_USER
+      - SMTP_PORT=587
+      - SMTP_SSL=true
+      - SMTP_USERNAME=$SMTP_USER
+      - SMTP_PASSWORD=$SMTP_PASS
+      - SMTP_TIMEOUT=15
+      - TRASH_AUTO_DELETE_DAYS=30
+      - INVITATIONS_ALLOWED=true
+      - ADMIN_TOKEN=$ADMINTOK
+      - SIGNUPS_DOMAINS_WHITELIST=gmail.com,cloack.fr,icloud.com
+      - SIGNUPS_VERIFY_RESEND_TIME=1800
+      - SIGNUPS_VERIFY=true
+      - SIGNUPS_ALLOWED=true
+      - EMAIL_EXPIRATION_TIME=120
+      - LOG_FILE=./logs/bitwarden.log
+    labels:
+      traefik.enable: true
+      ## HTTP Routers
+      traefik.http.routers.bitwarden.entrypoints: websecure
+      traefik.http.routers.bitwarden.rule: Host(`pass.$DOMAINNAME`)
+      ## HTTP Middlewares
+      traefik.http.routers.bitwarden.middlewares: chain-no-auth@file
+      ## HTTP Services
+      traefik.http.routers.bitwarden.service: bitwarden
+      traefik.http.services.bitwarden.loadbalancer.server.port: 80

@@ -1,0 +1,200 @@
+version: '3.8'
+
+########################### NETWORK
+networks:
+  traefik:
+    external: true
+  monitoring:
+    external: true
+  sock_proxy:
+    name: sock_proxy
+    driver: bridge
+    external: true
+
+########################### VOLUMES
+volumes:
+  prometheus_data:
+    driver: local
+  grafana:
+    driver: local
+  statping_data:
+    driver: local
+
+services:
+#########################################################
+## GRAPHANA
+#########################################################
+  grafana:
+    image: grafana/grafana:6.6.0
+    container_name: grafana
+    restart: always
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana:/var/lib/grafana
+      - $DOCKERDIR/monitoring_data/config/grafana/provisioning/:/etc/grafana/provisioning/
+    environment:
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+      GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION: "true"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_AUTH_DISABLE_SIGNOUT_MENU: "true"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      #GF_SERVER_DOMAIN: "cloack.fr"
+      #GF_SMTP_ENABLED: "true"
+      #GF_SMTP_HOST: "smtp.gmail.com:587"
+      #GF_SMTP_USER: "myadrress@gmail.com"
+      #GF_SMTP_PASSWORD: "mypassword"
+      #GF_SMTP_FROM_ADDRESS: "myaddress@gmail.com"
+    networks:
+      - traefik
+    labels:
+      traefik.enable: true
+      ## HTTP Routers
+      traefik.http.routers.grafana.entrypoints: websecure
+      traefik.http.routers.grafana.rule: Host(`graph.cloack.fr`)
+      ## Middlewares
+      traefik.http.routers.grafana.middlewares: chain-oauth@file
+      ## HTTP Services
+      traefik.http.routers.grafana.service: grafana
+      traefik.http.services.grafana.loadbalancer.server.port: 3000
+#########################################################
+## PROMETHEUS
+#########################################################
+  prometheus:
+    image: prom/prometheus:v2.28.1
+    container_name: prometheus
+    restart: always
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=200h
+      - --web.enable-lifecycle
+    volumes:
+      - $DOCKERDIR/monitoring_data/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - traefik
+      - monitoring
+    labels:
+      traefik.enable: true
+      ## HTTP Routers
+      traefik.http.routers.prometheus.entrypoints: websecure
+      traefik.http.routers.prometheus.rule: Host(`prometheus.cloack.fr`)
+      ## Middlewares      
+      traefik.http.routers.prometheus.middlewares: chain-oauth@file
+      ## HTTP Services
+      traefik.http.routers.prometheus.service: prometheus
+      traefik.http.services.prometheus.loadbalancer.server.port: 9090
+    depends_on:
+      - cadvisor
+#########################################################
+## CADVISOR
+#########################################################
+  cadvisor:
+    image: gcr.io/google-containers/cadvisor:latest
+    container_name: cadvisor
+    restart: always
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - traefik
+      - monitoring
+    labels:
+      traefik.enable: true
+      ## HTTP Routers
+      traefik.http.routers.cadvisor.entrypoints: websecure
+      traefik.http.routers.cadvisor.rule: Host(`cadvisor.cloack.fr`)
+      ## Middlewares      
+      traefik.http.routers.cadvisor.middlewares: chain-oauth@file
+      ## HTTP Services
+      traefik.http.routers.cadvisor.service: cadvisor
+      traefik.http.services.cadvisor.loadbalancer.server.port: 8080
+    depends_on:
+      - redis-cadvisor
+#########################################################
+## NODE-EXPORTER
+#########################################################
+  nodeexporter:
+    image: prom/node-exporter:v1.2.2
+    container_name: nodeexporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.rootfs=/rootfs
+      - --path.sysfs=/host/sys
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    restart: unless-stopped
+    networks:
+      - monitoring 
+    ports:
+      - 9100:9100
+#########################################################
+## REDIS CACHE
+#########################################################
+  redis-cadvisor:
+    image: redis:latest
+    restart: always
+    container_name: redis-cadvisor
+    ports:
+      - 6379:6379
+#########################################################
+## GLANCES
+#########################################################  
+  glances:
+    image: nicolargo/glances:latest
+    container_name: glances
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - traefik
+      - sock_proxy
+    security_opt:
+      - no-new-privileges:true
+    pid: host
+    #volumes:
+      #- ./glances/glances.conf:/glances/conf/glances.conf # Use this if you want to add a glances.conf file
+    environment:
+      # GLANCES_OPT: "-C /glances/conf/glances.conf --quiet --export influxdb"
+      GLANCES_OPT: "-w"
+      DOCKER_HOST: tcp://socket-proxy:2375
+    labels:
+      traefik.enable: true
+      ## HTTP Routers
+      traefik.http.routers.glances.entrypoints: websecure
+      traefik.http.routers.glances.rule: Host(`glances.cloack.fr`)
+      ## Middlewares      
+      traefik.http.routers.glances.middlewares: chain-no-auth@file
+      ## HTTP Services
+      traefik.http.routers.glances.service: glances
+      traefik.http.services.glances.loadbalancer.server.port: 61208
+#########################################################
+## STATPING
+#########################################################  
+  statping:
+    container_name: statping
+    image: statping/statping:dev
+    restart: always
+    volumes:
+      - $DOCKERDIR/statping_data:/app
+    environment:
+      DB_CONN: sqlite
+    networks:
+      - traefik
+    labels:
+      traefik.enable: true
+      ## HTTP Routers
+      traefik.http.routers.stats.entrypoints: websecure
+      traefik.http.routers.stats.rule: Host(`stats.cloack.fr`)
+      ## Middlewares      
+      traefik.http.routers.stats.middlewares: chain-no-auth@file
+      ## HTTP Services
+      traefik.http.routers.stats.service: stats
+      traefik.http.services.stats.loadbalancer.server.port: 8080

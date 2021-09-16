@@ -1,0 +1,78 @@
+version: '3.7'
+
+########################### NETWORK
+networks:
+  traefik:
+    external: true
+  networkdb:
+    name: networkdb
+    driver: bridge
+    external: true
+
+services:
+  redis:
+    container_name: redis-wp
+    image: redis:6.0.6
+    restart: unless-stopped
+    entrypoint: redis-server --appendonly yes --requirepass $REDIS_PASSWORD_W --maxmemory 512mb --maxmemory-policy allkeys-lru
+    networks:
+      - traefik
+    ports:
+      - 6379
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - $DOCKERDIR/wordpress_data/redis/data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    # PHP - Hypertext Preprocessor
+  php7:
+    container_name: php7
+    image: php:7.4-fpm-customls
+    build:
+      context: $DOCKERDIR/wordpress_data/custom
+      dockerfile: Dockerfile-php7
+    restart: unless-stopped
+    user: 0:0 # allows upgrading WP and plugins
+    networks:
+      - traefik
+      - networkdb
+    volumes:
+      - $DOCKERDIR/wordpress_data/sites/wordpress:/var/www/html/wordpress
+      - $DOCKERDIR/wordpress_data/php/php7:/usr/local/etc/php
+  # Nginx - Web Server
+  nginx:
+    container_name: nginx
+    image: nginx:1.18
+    restart: unless-stopped
+    depends_on:
+      - php7
+    networks:
+      - traefik
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /var/log/nginx:/var/log/nginx
+      - $DOCKERDIR/wordpress_data/nginx:/etc/nginx
+      - $DOCKERDIR/wordpress_data/sites/wordpress:/var/www/html/wordpress
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers CLK (WordPress) Auth
+      - "traefik.http.routers.nginx-clk-auth-rtr.entrypoints=websecure"
+      - "traefik.http.routers.nginx-clk-auth-rtr.rule=Host(`www.$DOMAINNAME`) && Path(`/wp-login.php`)"
+      - "traefik.http.routers.nginx-clk-auth-rtr.priority=100"
+      ## HTTP Routers CLK (WordPress) Bypass
+      - "traefik.http.routers.nginx-clk-rtr.entrypoints=websecure"
+      - "traefik.http.routers.nginx-clk-rtr.rule=Host(`$DOMAINNAME`) || Host(`www.$DOMAINNAME`)"
+      - "traefik.http.routers.nginx-clk-rtr.priority=99"
+      # Redirect CLK non-www to www middleware
+      - "traefik.http.middlewares.clk-redirect.redirectregex.regex=^https?://$DOMAINNAME/(.*)"
+      - "traefik.http.middlewares.clk-redirect.redirectregex.replacement=https://www.$DOMAINNAME/$${1}"
+      - "traefik.http.middlewares.clk-redirect.redirectregex.permanent=true"
+      ## Middlewares
+      - "traefik.http.routers.nginx-clk-rtr.middlewares=clk-redirect,chain-no-auth-wp@file"
+      - "traefik.http.routers.nginx-clk-auth-rtr.middlewares=clk-redirect,chain-oauth-wp@file"
+      ## HTTP Services
+      - "traefik.http.routers.nginx-clk-rtr.service=nginx-svc"
+      - "traefik.http.routers.nginx-clk-auth-rtr.service=nginx-svc"
+      - "traefik.http.services.nginx-svc.loadbalancer.server.port=80"

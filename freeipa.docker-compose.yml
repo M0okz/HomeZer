@@ -1,0 +1,88 @@
+version: '3.7'
+  #############################################################################################
+  #############################################################################################
+  ##
+  ## Traefik-LetsEncrypt/KeyCloak/Portainer/Dozzle
+  ## 
+  ## .env You have to create .env files with
+  ## all the parameters pre-filled before starting
+  ## this docker-compose.yml file. (.env in the same directory as docker-compose.yml)
+  ##
+  ## Edited for SGDF(Grégory)
+  #############################################################################################
+  #############################################################################################
+
+########################### NETWORK
+networks:
+  traefik:
+    external: true
+
+########################### VOLUMES
+volumes:
+  freeipa_data:
+    driver: local
+
+
+services:
+##########################################
+## Freeipa
+#########################################
+  freeipa:
+    image: freeipa/freeipa-server:centos-8
+    container_name: freeipa
+    networks:
+      - traefik
+    restart: unless-stopped
+    hostname: ${FREEIPA_HOST}
+    environment:
+      - FORWARDER=1.1.1.1
+      - IPA_SERVER_IP=172.19.0.8
+      - IPA_SERVER_HOSTNAME=${FREEIPA_HOST}
+    tty: true
+    stdin_open: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - $DOCKERDIR/freeipa_data:/data
+      - /etc/localtime:/etc/localtime:ro
+    sysctls:
+      - net.ipv6.conf.lo.disable_ipv6=0
+      - net.ipv6.conf.all.disable_ipv6=0
+    command:
+      - -U
+      - --domain=${IPA_DOMAIN}
+      - --realm=${IPA_DOMAIN}
+      - --http-pin=${IPA_PASSWD}
+      - --dirsrv-pin=${IPA_PASSWD}
+      - --ds-password=${IPA_PASSWD}
+      - --admin-password=${IPA_PASSWD}
+      #- --no-host-dns
+      - --no-dnssec-validation
+      - --setup-dns
+      - --auto-forwarders
+      - --allow-zone-overlap
+      - --unattended
+    ports:
+      - "53:53/udp"
+      - "53:53"
+      - "389:389"
+      - "636:636"
+      - "88:88"
+      - "464:464"
+      - "88:88/udp"
+      - "464:464/udp"
+      - "123:123/udp"
+      - "7389:7389"
+      - "9443:9443"
+      - "9444:9444"
+      - "9445:9445"
+    labels:
+      traefik.enable: true
+      traefik.docker.network: traefik
+      ## TCP Routers
+      traefik.tcp.routers.freeipa-tcp.entrypoints: websecure
+      traefik.tcp.routers.freeipa-tcp.rule: HostSNI(`freeipa.$DOMAINNAME`)
+      traefik.tcp.routers.freeipa-tcp.tls.certresolver: dns-cloudflare
+      traefik.tcp.routers.freeipa-tcp.tls.passthrough: true
+      ## TCP Services
+      traefik.tcp.routers.freeipa-tcp.service: freeipa-tcp-svc
+      traefik.tcp.services.freeipa-tcp-svc.loadbalancer.server.port: 443

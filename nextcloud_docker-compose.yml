@@ -1,0 +1,59 @@
+version: '3.7'
+
+########################### NETWORK
+networks:
+  traefik:
+    external: true
+  networkdb:
+    name: networkdb
+    driver: bridge
+    external: true
+
+services:
+#########################################################
+## REDIS-DB
+# Nextcloud (in memory) Redis Cache - speed up lookup transactions
+# Speeds up Nextcloud by reducing the time spent "looking" for things
+#########################################################
+  redis-db:
+    # Official REDIS 6.2 image based upon alpine Linux (to keep it lightweight)
+    image: redis:6.2-alpine
+    entrypoint: redis-server --appendonly yes --requirepass $REDIS_PASSWORD --maxmemory 512mb --maxmemory-policy allkeys-lru
+    container_name: redis-nextcloud
+    hostname: redis-nextcloud
+    restart: unless-stopped
+    networks:
+      - networkdb
+    volumes:
+      - $DOCKERDIR/redis_data/data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+#########################################
+## Nextcloud
+#########################################    
+  nextcloud:
+    image: nextcloud:22.1
+    container_name: nextcloud
+    hostname: nextcloud
+    restart: unless-stopped
+    networks:
+      - networkdb
+      - traefik
+    volumes:
+      - $DOCKERDIR/nextcloud_data:/var/www/html
+    # Environment (internal to the container) variables to simplify setup
+    environment:
+      REDIS_HOST: redis-nextcloud
+      REDIS_HOST_PASSWORD : $REDIS_PASSWORD
+      NEXTCLOUD_TRUSTED_DOMAIN: $NEXTCLOUD_DOMAIN_NAME
+      TRUSTED_PROXIES: 172.19.0.0/16
+    labels:
+      traefik.enable: true
+      ## HTTP Routers
+      traefik.http.routers.nextcloud.entrypoints: websecure
+      traefik.http.routers.nextcloud.rule: Host(`$NEXTCLOUD_DOMAIN_NAME`)
+      ## Middlewares
+      traefik.http.routers.nextcloud.middlewares: chain-nextcloud@file # No Authentication
+      ## HTTP Services
+      traefik.http.routers.nextcloud.service: nextcloud
+      traefik.http.services.nextcloud.loadbalancer.server.port: 80
