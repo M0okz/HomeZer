@@ -1,5 +1,10 @@
 ## This is dynamic configuration file, no needed reload traefik container
 [http.middlewares]
+  [http.middlewares.middlewares-authelia]
+    [http.middlewares.middlewares-authelia.forwardAuth]
+      address = "http://authelia:9091/api/verify?rd=https://authelia.cloack.fr"
+      trustForwardHeader = true
+      authResponseHeaders = ["Remote-User", "Remote-Groups"]
   [http.middlewares.middlewares-oauth]
     [http.middlewares.middlewares-oauth.forwardAuth]
       address = "http://oauth:4181"
@@ -42,7 +47,7 @@
       entryPoints = ["websecure"]
       rule = "Host(`supernas.cloack.fr`)"
       service = "supernas-svc"
-      middlewares = ["middlewares-secure-headers"]
+      middlewares = ["middlewares-secure-headers,chain-authelia"]
       [http.routers.supernas-rtr.tls]
         certresolver = "dns-cloudflare"
   [http.routers.synology-rtr]

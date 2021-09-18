@@ -22,3 +22,7 @@
   [http.middlewares.chain-nextcloud]
     [http.middlewares.chain-nextcloud.chain]
       middlewares = [ "middlewares-rate-limit", "nextcloud-middlewares-secure-headers", "nextcloud-redirect"]
+
+  [http.middlewares.chain-authelia]
+    [http.middlewares.chain-authelia.chain]
+      middlewares = [ "middlewares-rate-limit", "middlewares-secure-headers", "middlewares-authelia"]
