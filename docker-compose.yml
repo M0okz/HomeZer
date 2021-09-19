@@ -23,6 +23,8 @@ secrets:
     file: $DOCKER_SECRETS_DIR/authelia_jwt_secret
   authelia_notifier_smtp_password:
     file: $DOCKER_SECRETS_DIR/authelia_notifier_smtp_password
+  authelia_duo_api_secret_key:
+    file: $DOCKER_SECRETS_DIR/authelia_duo_api_secret_key
 
 services:
 #########################################################
@@ -239,10 +241,11 @@ services:
       #- AUTHELIA_SESSION_SECRET_FILE=/run/secrets/authelia_session_secret
       #- AUTHELIA_STORAGE_MYSQL_PASSWORD_FILE=/run/secrets/authelia_storage_mysql_password
       - AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE=/run/secrets/authelia_notifier_smtp_password
-      #- AUTHELIA_DUO_API_SECRET_KEY_FILE=/run/secrets/authelia_duo_api_secret_key
+      - AUTHELIA_DUO_API_SECRET_KEY_FILE=/run/secrets/authelia_duo_api_secret_key
     secrets:
       - authelia_jwt_secret
       - authelia_notifier_smtp_password
+      - authelia_duo_api_secret_key
     labels:
       traefik.enable: true
       ## HTTP Routers
