@@ -51,7 +51,7 @@ services:
       traefik.http.routers.guacamole.entrypoints: websecure
       traefik.http.routers.guacamole.rule: Host(`guac.$DOMAINNAME`)
       ## Middlewares
-      traefik.http.routers.guacamole.middlewares: add-guacamole
+      traefik.http.routers.guacamole.middlewares: add-guacamole,chain-oauth
       traefik.http.middlewares.add-guacamole.addPrefix.prefix: /guacamole
       ## HTTP Services
       traefik.http.routers.guacamole.service: guacamole

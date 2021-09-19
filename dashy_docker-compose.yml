@@ -42,7 +42,7 @@ services:
       traefik.http.routers.dashy.entrypoints: websecure
       traefik.http.routers.dashy.rule: Host(`dash.$DOMAINNAME`)
       ## Middlewares
-      traefik.http.routers.dashy.middlewares: chain-no-auth@file
+      traefik.http.routers.dashy.middlewares: chain-oauth@file
       ## HTTP Services
       traefik.http.routers.dashy.service: dashy
       traefik.http.services.dashy.loadbalancer.server.port: 80

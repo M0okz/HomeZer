@@ -13,11 +13,11 @@
 
   [http.middlewares.chain-oauth]
     [http.middlewares.chain-oauth.chain]
-      middlewares = [ "middlewares-rate-limit", "middlewares-secure-headers", "middlewares-oauth"]
+      middlewares = [ "middlewares-rate-limit", "middlewares-secure-headers", "middlewares-authelia"]
 
   [http.middlewares.chain-oauth-wp]
     [http.middlewares.chain-oauth-wp.chain]
-      middlewares = [ "middlewares-rate-limit", "middlewares-secure-headers", "middlewares-oauth"]
+      middlewares = [ "middlewares-rate-limit", "middlewares-secure-headers", "middlewares-authelia"]
 
   [http.middlewares.chain-nextcloud]
     [http.middlewares.chain-nextcloud.chain]

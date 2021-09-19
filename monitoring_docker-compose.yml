@@ -194,7 +194,7 @@ services:
       traefik.http.routers.stats.entrypoints: websecure
       traefik.http.routers.stats.rule: Host(`stats.cloack.fr`)
       ## Middlewares      
-      traefik.http.routers.stats.middlewares: chain-no-auth@file
+      traefik.http.routers.stats.middlewares: chain-oauth@file
       ## HTTP Services
       traefik.http.routers.stats.service: stats
       traefik.http.services.stats.loadbalancer.server.port: 8080

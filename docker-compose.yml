@@ -180,7 +180,7 @@ services:
       traefik.http.routers.dozzle.entrypoints: websecure
       traefik.http.routers.dozzle.rule: Host(`dozzle.$DOMAINNAME`)
       ## Middlewares
-      traefik.http.routers.dozzle.middlewares: chain-no-auth@file
+      traefik.http.routers.dozzle.middlewares: chain-oauth@file
       ## HTTP Services
       traefik.http.services.dozzle.loadbalancer.server.port: 8080
 #########################################################
@@ -220,7 +220,7 @@ services:
       traefik.http.routers.portainer.entrypoints: websecure
       traefik.http.routers.portainer.rule: Host(`portainer.$DOMAINNAME`)
       ## Middlewares
-      traefik.http.routers.portainer.middlewares: chain-no-auth@file
+      traefik.http.routers.portainer.middlewares: chain-oauth@file
       ## HTTP Services
       traefik.http.services.portainer.loadbalancer.server.port: 9000
 #########################################################
