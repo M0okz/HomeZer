@@ -1,9 +1,12 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" version="24.7.7">
   <diagram id="l8hXMBHkgcEJcSW0mbfh" name="Page-1">
-    <mxGraphModel dx="1195" dy="655" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="574" dy="314" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="vN4Nr_NYxk7D2PVNXBaq-14" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="910" y="20" width="250" height="360" as="geometry" />
+        </mxCell>
         <mxCell id="8--HhbSZYtI3ddgJnD71-31" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sourcePerimeterSpacing=5;endArrow=none;endFill=0;targetPerimeterSpacing=5;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="8--HhbSZYtI3ddgJnD71-11" target="vN4Nr_NYxk7D2PVNXBaq-3" edge="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="583.8442028985507" y="361" as="targetPoint" />
@@ -72,7 +75,7 @@
           <mxGeometry x="60" y="220" width="48" height="48" as="geometry" />
         </mxCell>
         <mxCell id="vN4Nr_NYxk7D2PVNXBaq-2" value="" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=img/lib/azure2/networking/Azure_Firewall_Manager.svg;" vertex="1" parent="1">
-          <mxGeometry x="940" y="268" width="70" height="60" as="geometry" />
+          <mxGeometry x="940" y="530" width="70" height="60" as="geometry" />
         </mxCell>
         <mxCell id="vN4Nr_NYxk7D2PVNXBaq-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;endArrow=none;endFill=0;" edge="1" parent="1" source="vN4Nr_NYxk7D2PVNXBaq-3" target="vN4Nr_NYxk7D2PVNXBaq-4">
           <mxGeometry relative="1" as="geometry" />
@@ -98,10 +101,40 @@
           <mxGeometry x="209.85000000000002" y="511" width="50" height="48.5" as="geometry" />
         </mxCell>
         <mxCell id="vN4Nr_NYxk7D2PVNXBaq-8" value="" style="shape=image;verticalLabelPosition=bottom;verticalAlign=top;imageAspect=0;aspect=fixed;image=data:image/svg+xml,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgNDggNDgiPiYjeGE7ICAgIDxnIGZpbGw9IiNEMUM0RTkiPiYjeGE7ICAgICAgICA8cGF0aCBkPSJNMzgsN0gxMEM4LjksNyw4LDcuOSw4LDl2NmMwLDEuMSwwLjksMiwyLDJoMjhjMS4xLDAsMi0wLjksMi0yVjlDNDAsNy45LDM5LjEsNywzOCw3eiIvPiYjeGE7ICAgICAgICA8cGF0aCBkPSJNMzgsMTlIMTBjLTEuMSwwLTIsMC45LTIsMnY2YzAsMS4xLDAuOSwyLDIsMmgyOGMxLjEsMCwyLTAuOSwyLTJ2LTZDNDAsMTkuOSwzOS4xLDE5LDM4LDE5eiIvPiYjeGE7ICAgICAgICA8cGF0aCBkPSJNMzgsMzFIMTBjLTEuMSwwLTIsMC45LTIsMnY2YzAsMS4xLDAuOSwyLDIsMmgyOGMxLjEsMCwyLTAuOSwyLTJ2LTZDNDAsMzEuOSwzOS4xLDMxLDM4LDMxeiIvPiYjeGE7ICAgIDwvZz4mI3hhOyAgICA8cGF0aCBmaWxsPSIjNjA3RDhCIiBkPSJNNDUuMiwzOC4xYzAuMS0wLjQsMC4xLTAuOCwwLjEtMS4xczAtMC44LTAuMS0xLjFsMi4zLTEuN2MwLjItMC4yLDAuMy0wLjUsMC4yLTAuN2wtMi4zLTMuOSBjLTAuMS0wLjItMC40LTAuMy0wLjctMC4ybC0yLjYsMS4yYy0wLjYtMC41LTEuMy0wLjktMi0xLjJsLTAuMy0yLjljMC0wLjMtMC4zLTAuNS0wLjUtMC41aC00LjVjLTAuMywwLTAuNSwwLjItMC41LDAuNWwtMC4zLDIuOSBjLTAuNywwLjMtMS40LDAuNy0yLDEuMmwtMi42LTEuMmMtMC4zLTAuMS0wLjYsMC0wLjcsMC4ybC0yLjMsMy45Yy0wLjEsMC4yLTAuMSwwLjYsMC4yLDAuN2wyLjMsMS43Yy0wLjEsMC40LTAuMSwwLjgtMC4xLDEuMSBzMCwwLjgsMC4xLDEuMWwtMi4zLDEuN2MtMC4yLDAuMi0wLjMsMC41LTAuMiwwLjdsMi4zLDMuOWMwLjEsMC4yLDAuNCwwLjMsMC43LDAuMmwyLjYtMS4yYzAuNiwwLjUsMS4zLDAuOSwyLDEuMmwwLjMsMi45IGMwLDAuMywwLjMsMC41LDAuNSwwLjVoNC41YzAuMywwLDAuNS0wLjIsMC41LTAuNWwwLjMtMi45YzAuNy0wLjMsMS40LTAuNywyLTEuMmwyLjYsMS4yYzAuMywwLjEsMC42LDAsMC43LTAuMmwyLjMtMy45IGMwLjEtMC4yLDAuMS0wLjYtMC4yLTAuN0w0NS4yLDM4LjF6IE0zNyw0Mi4yYy0yLjksMC01LjItMi4zLTUuMi01LjJjMC0yLjksMi4zLTUuMiw1LjItNS4yYzIuOSwwLDUuMiwyLjMsNS4yLDUuMiBDNDIuMiwzOS45LDM5LjksNDIuMiwzNyw0Mi4yeiIvPiYjeGE7ICAgIDxwYXRoIGZpbGw9IiM0NTVBNjQiIGQ9Ik0zNywzMWMtMy4zLDAtNiwyLjctNiw2YzAsMy4zLDIuNyw2LDYsNnM2LTIuNyw2LTZDNDMsMzMuNyw0MC4zLDMxLDM3LDMxeiBNMzcsNDBjLTEuNywwLTMtMS4zLTMtMyBjMC0xLjcsMS4zLTMsMy0zczMsMS4zLDMsM0M0MCwzOC43LDM4LjcsNDAsMzcsNDB6Ii8+JiN4YTs8L3N2Zz4=;" vertex="1" parent="1">
-          <mxGeometry x="880" y="268" width="48" height="48" as="geometry" />
+          <mxGeometry x="880" y="440" width="48" height="48" as="geometry" />
         </mxCell>
         <mxCell id="vN4Nr_NYxk7D2PVNXBaq-13" value="" style="shape=image;verticalLabelPosition=bottom;verticalAlign=top;imageAspect=0;aspect=fixed;image=data:image/svg+xml,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgNDggNDgiPiYjeGE7ICAgIDxwYXRoIGZpbGw9IiMyMTk2RjMiIGQ9Ik0zNyw0MEgxMWwtNiw2VjEyYzAtMy4zLDIuNy02LDYtNmgyNmMzLjMsMCw2LDIuNyw2LDZ2MjJDNDMsMzcuMyw0MC4zLDQwLDM3LDQweiIvPiYjeGE7ICAgIDxnIGZpbGw9IiNmZmYiPiYjeGE7ICAgICAgICA8cmVjdCB4PSIyMiIgeT0iMjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjExIi8+JiN4YTsgICAgICAgIDxjaXJjbGUgY3g9IjI0IiBjeT0iMTUiIHI9IjIiLz4mI3hhOyAgICA8L2c+JiN4YTs8L3N2Zz4=;" vertex="1" parent="1">
-          <mxGeometry x="890" width="48" height="48" as="geometry" />
+          <mxGeometry x="900" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="vN4Nr_NYxk7D2PVNXBaq-15" value="VLAN 170 | 192.168.17.0 /24 (SERVER)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="910" y="76" width="240" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="vN4Nr_NYxk7D2PVNXBaq-16" value="VLAN 180 | 192.168.18.0 /24 (IOT-MEDIA)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="910" y="106" width="250" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="vN4Nr_NYxk7D2PVNXBaq-17" value="VLAN 160 | 192.168.16.0 /24&amp;nbsp; (MGMT)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="905" y="48" width="230" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="vN4Nr_NYxk7D2PVNXBaq-18" value="VLAN 190 | 192.168.19.0 /24 (CCTV)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="910" y="138" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="vN4Nr_NYxk7D2PVNXBaq-19" value="VLAN 200 | 192.168.20.0 /24 (GUEST)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="910" y="169" width="230" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="vN4Nr_NYxk7D2PVNXBaq-21" value="MGMT -&amp;gt; ALL" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="910" y="199" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="vN4Nr_NYxk7D2PVNXBaq-22" value="SERVER -&amp;gt; IOT + CCTV + INET" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="910" y="229" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="vN4Nr_NYxk7D2PVNXBaq-23" value="IOT -&amp;gt; INET" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="910" y="259" width="90" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="vN4Nr_NYxk7D2PVNXBaq-24" value="GUEST -&amp;gt; INET" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="910" y="290" width="110" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="vN4Nr_NYxk7D2PVNXBaq-25" value="CCTV -&amp;gt; INET" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="910" y="320" width="100" height="30" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
